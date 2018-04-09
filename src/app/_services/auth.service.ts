@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Http, Headers, RequestOptions, Response } from '@angular/http';
 import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/observable/throw';
+import { Observable } from 'rxjs/Observable';
 
 @Injectable()
 export class AuthService {
@@ -20,18 +23,45 @@ login(model: any) {
             localStorage.setItem('token', user.tokenString);
             this.userToken = user.tokenString;
         }
-    });
+    }).catch(this.handleError);
 }
 
 register(model: any) {
     // post our model
-    return this.http.post(this.baseUrl + 'register', model, this.requestOptions());
+    return this.http.post(this.baseUrl + 'register', model, this.requestOptions()).catch(this.handleError);
 }
 
 requestOptions() {
     // specify the type of request
     const headers = new Headers({'Content-type': 'application/json'});
     return new RequestOptions({headers: headers});
+}
+
+// method to handle error
+private handleError(error: any) {
+    // get the application error from the header
+    const applicationError = error.headers.get('Application-Error');
+    if (applicationError) {
+        // return the message return from the server
+        return Observable.throw(applicationError);
+    }
+
+    // the model state error
+    const serverError = error.json();
+    let modelStateErrors = '';
+    if (serverError) {
+        // loop the keys from the server error
+        for (const key in serverError) {
+            if (serverError[key]) {
+                // add to medel state errors
+                modelStateErrors += serverError[key] + '\n';
+            }
+        }
+    }
+
+    return Observable.throw(
+        modelStateErrors || 'Server error'
+    );
 }
 
 }
