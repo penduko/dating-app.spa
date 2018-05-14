@@ -16,6 +16,7 @@ export class MemberEditComponent implements OnInit {
   // the template itself is considered almost as a child component of the component class itself
   // and the way to access method or property of child component is to user @ViewChild decorator
   @ViewChild('editForm') editForm: NgForm;
+  photoUrl: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -28,6 +29,8 @@ export class MemberEditComponent implements OnInit {
     this.route.data.subscribe(data => {
       this.user = data['user'];
     });
+    // using the subscribe method we get the current photo from the auth service
+    this.authService.currentPhotoUrl.subscribe(photoUrl => this.photoUrl = photoUrl);
   }
 
   updateUser() {
@@ -43,5 +46,9 @@ export class MemberEditComponent implements OnInit {
           this.alertify.error(error);
         }
       );
+  }
+
+  updateMainPhoto(photoUrl) {
+    this.user.photoUrl = photoUrl;
   }
 }

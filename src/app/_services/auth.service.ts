@@ -5,6 +5,8 @@ import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/throw';
 import { Observable } from 'rxjs/Observable';
 import { tokenNotExpired, JwtHelper } from 'angular2-jwt';
+import { User } from '../_models/User';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
 @Injectable()
 export class AuthService {
@@ -12,8 +14,18 @@ export class AuthService {
   userToken: any;
   decodedToken: any;
   jwtHelper: JwtHelper = new JwtHelper();
-
+  currentUser: User;
+  // use behaviorsubject for any to any component communications
+  // behaviorsubject needs an initial value
+  // use a placeholder image
+  private photoUrl = new BehaviorSubject<string>('../../assets/user.png');
+  // property that other component can subscribe
+  currentPhotoUrl = this.photoUrl.asObservable();
   constructor(private http: Http) {}
+
+  changeMemberPhoto(photoUrl: string) {
+    this.photoUrl.next(photoUrl);
+  }
 
   login(model: any) {
     // post our model and store the return token in browser local storage
@@ -23,13 +35,20 @@ export class AuthService {
         const user = response.json();
 
         // check if there's anything in our user object
-        if (user) {
-          // store the token
+        if (user && user.tokenString) {
+          // store the token in localstorage
           localStorage.setItem('token', user.tokenString);
+          // store the user in localstorage
+          localStorage.setItem('user', JSON.stringify(user.user));
+
+          this.currentUser = user.user;
           this.userToken = user.tokenString;
 
           // decode and get the username from token to display the user
           this.decodedToken = this.jwtHelper.decodeToken(user.tokenString);
+
+          // set currentPhotoUrl to photoUrl contained in current user object
+          this.changeMemberPhoto(this.currentUser.photoUrl);
         }
       })
       .catch(this.handleError);
