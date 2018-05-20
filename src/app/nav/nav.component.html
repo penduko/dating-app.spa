@@ -30,7 +30,7 @@
           <input type="password" #password="ngModel" placeholder="Password" class="form-control" required name="password" [(ngModel)]="model.password">
         </div>
         <button type="submit" [disabled]="!loginForm.valid" class="btn btn-success">Sign in</button>
-      </form>
+      </form> 
       
       <ul *ngIf="loggedIn()" class="nav navbar-nav navbar-right">
         <li>

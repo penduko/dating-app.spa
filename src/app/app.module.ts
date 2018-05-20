@@ -1,8 +1,12 @@
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { BsDropdownModule, TabsModule } from 'ngx-bootstrap';
+import {
+  BsDropdownModule,
+  TabsModule,
+  BsDatepickerModule
+} from 'ngx-bootstrap';
 import { NgxGalleryModule } from 'ngx-gallery';
 import { FileUploadModule } from 'ng2-file-upload';
 
@@ -29,7 +33,6 @@ import { MemberEditResolver } from './_resolver/member-edit.resolver';
 import { PreventUnsaveChanges } from './_guards/prevent-unsave-changes.guard';
 import { PhotoEditorComponent } from './member/photo-editor/photo-editor.component';
 
-
 @NgModule({
   declarations: [
     AppComponent,
@@ -43,19 +46,25 @@ import { PhotoEditorComponent } from './member/photo-editor/photo-editor.compone
     MemberDetailComponent,
     MemberEditComponent,
     PhotoEditorComponent
-],
+  ],
   imports: [
     BrowserModule,
     HttpModule,
     FormsModule,
+    ReactiveFormsModule,
     BsDropdownModule.forRoot(),
     RouterModule.forRoot(appRoutes),
     AuthModule,
     TabsModule.forRoot(),
     NgxGalleryModule,
-    FileUploadModule
+    FileUploadModule,
+    BsDatepickerModule.forRoot()
   ],
   providers: [
+    // components use services, which provide specific
+    // functionality not directly related to views
+    // service providers can be injected into components as dependencies,
+    // making your code modular, reusable, and efficient
     AuthService,
     AlertifyService,
     AuthGuard,
@@ -67,4 +76,4 @@ import { PhotoEditorComponent } from './member/photo-editor/photo-editor.compone
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}
