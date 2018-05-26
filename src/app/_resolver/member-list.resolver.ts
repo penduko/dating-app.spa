@@ -14,6 +14,9 @@ import 'rxjs/add/observable/of';
 // we need to this so that we can inject this it a constructor
 @Injectable()
 export class MemberListResolver implements Resolve<User[]> {
+  pageSize = 5;
+  pageNumber = 1;
+
   constructor(
     private userService: UserService,
     private alertify: AlertifyService,
@@ -27,7 +30,7 @@ export class MemberListResolver implements Resolve<User[]> {
     // in the case of component we need to subscribe
     // because were returning Obeservable but the route resolver automatically
     // subscribe for us so we dont need to use it here
-    return this.userService.getUsers().catch(error => {
+    return this.userService.getUsers(this.pageNumber, this.pageSize).catch(error => {
       // incase of an error
       // notify the user
       this.alertify.error('Problem retrieving data');

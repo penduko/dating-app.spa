@@ -5,7 +5,9 @@ import { NgModule } from '@angular/core';
 import {
   BsDropdownModule,
   TabsModule,
-  BsDatepickerModule
+  BsDatepickerModule,
+  PaginationModule,
+  ButtonsModule
 } from 'ngx-bootstrap';
 import { NgxGalleryModule } from 'ngx-gallery';
 import { FileUploadModule } from 'ng2-file-upload';
@@ -32,6 +34,7 @@ import { MemberEditComponent } from './member/member-edit/member-edit.component'
 import { MemberEditResolver } from './_resolver/member-edit.resolver';
 import { PreventUnsaveChanges } from './_guards/prevent-unsave-changes.guard';
 import { PhotoEditorComponent } from './member/photo-editor/photo-editor.component';
+import { TimeAgoPipe } from 'time-ago-pipe';
 
 @NgModule({
   declarations: [
@@ -45,7 +48,8 @@ import { PhotoEditorComponent } from './member/photo-editor/photo-editor.compone
     MemberCardComponent,
     MemberDetailComponent,
     MemberEditComponent,
-    PhotoEditorComponent
+    PhotoEditorComponent,
+    TimeAgoPipe
   ],
   imports: [
     BrowserModule,
@@ -58,7 +62,9 @@ import { PhotoEditorComponent } from './member/photo-editor/photo-editor.compone
     TabsModule.forRoot(),
     NgxGalleryModule,
     FileUploadModule,
-    BsDatepickerModule.forRoot()
+    BsDatepickerModule.forRoot(),
+    PaginationModule.forRoot(),
+    ButtonsModule.forRoot()
   ],
   providers: [
     // components use services, which provide specific

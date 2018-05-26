@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { User } from '../_models/User';
 import { Observable } from 'rxjs/Observable';
-import { RequestOptions, Http, Headers } from '@angular/http';
+import { RequestOptions, Http, Headers, Response } from '@angular/http';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/throw';
 import { AuthHttp } from 'angular2-jwt';
+import { PaginatedResult } from '../_models/pagination';
 
 @Injectable()
 export class UserService {
@@ -14,11 +15,39 @@ export class UserService {
 
   constructor(private authHttp: AuthHttp) {}
 
-  getUsers(): Observable<User[]> {
+  getUsers(page?: number, itemsPerPage?: number, userParams?: any) {
+    // create new instance of PaginatedResult to return
+    const paginatedResult: PaginatedResult<User[]> = new PaginatedResult<User[]>();
+
+    // build our query string
+    let qryString = '?';
+    if (page != null && itemsPerPage != null) {
+      // pagination filter
+      qryString += 'pageNumber=' + page + '&pageSize=' + itemsPerPage + '&';
+    }
+
+    if (userParams != null) {
+      // user filter
+      qryString +=
+        'minAge=' + userParams.minAge +
+        '&maxAge=' + userParams.maxAge +
+        '&gender=' + userParams.gender +
+        '&orderBy=' + userParams.orderBy;
+    }
+
     // use angular2-jwt to request authentication
     return this.authHttp
-      .get(this.baseUrl + 'users')
-      .map(response => <User[]>response.json())
+      .get(this.baseUrl + 'users' + qryString)
+      .map((response: Response) => {
+        paginatedResult.result = response.json();
+
+        // check if theres anything in the header with Pagination as headers
+        if (response.headers.get('Pagination') != null) {
+          paginatedResult.pagination = JSON.parse(response.headers.get('Pagination'));
+        }
+
+        return paginatedResult;
+      })
       .catch(this.handleError);
   }
 
