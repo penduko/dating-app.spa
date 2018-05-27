@@ -15,7 +15,7 @@ export class UserService {
 
   constructor(private authHttp: AuthHttp) {}
 
-  getUsers(page?: number, itemsPerPage?: number, userParams?: any) {
+  getUsers(page?: number, itemsPerPage?: number, userParams?: any, likesParam?: string) {
     // create new instance of PaginatedResult to return
     const paginatedResult: PaginatedResult<User[]> = new PaginatedResult<User[]>();
 
@@ -24,6 +24,16 @@ export class UserService {
     if (page != null && itemsPerPage != null) {
       // pagination filter
       qryString += 'pageNumber=' + page + '&pageSize=' + itemsPerPage + '&';
+    }
+
+    if (likesParam === 'likers') {
+      // user likers filter
+      qryString += 'likers=true&';
+    }
+
+    if (likesParam === 'likees') {
+      // user likees filter
+      qryString += 'likees=true&';
     }
 
     if (userParams != null) {
@@ -77,8 +87,21 @@ export class UserService {
       .catch(this.handleError);
   }
 
+  sendLike(userId: number, recipientId: number) {
+    return this.authHttp
+      .post(this.baseUrl + 'users/' + userId + '/like/' + recipientId, {})
+      .catch(this.handleError);
+  }
+
   // method to handle error
   private handleError(error: any) {
+    // handle status 400 error from the server
+    if (error.status === 400) {
+      // errors the comes out of the server
+      // it is stored in _body of the reponse
+      return Observable.throw(error._body);
+    }
+
     // get the application error from the header
     const applicationError = error.headers.get('Application-Error');
     if (applicationError) {
