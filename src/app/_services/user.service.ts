@@ -7,7 +7,8 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/throw';
 import { AuthHttp } from 'angular2-jwt';
-import { PaginatedResult } from '../_models/pagination';
+import { PaginatedResult, Pagination } from '../_models/pagination';
+import { Message } from '../_models/message';
 
 @Injectable()
 export class UserService {
@@ -15,9 +16,16 @@ export class UserService {
 
   constructor(private authHttp: AuthHttp) {}
 
-  getUsers(page?: number, itemsPerPage?: number, userParams?: any, likesParam?: string) {
+  getUsers(
+    page?: number,
+    itemsPerPage?: number,
+    userParams?: any,
+    likesParam?: string
+  ) {
     // create new instance of PaginatedResult to return
-    const paginatedResult: PaginatedResult<User[]> = new PaginatedResult<User[]>();
+    const paginatedResult: PaginatedResult<User[]> = new PaginatedResult<
+      User[]
+    >();
 
     // build our query string
     let qryString = '?';
@@ -39,10 +47,14 @@ export class UserService {
     if (userParams != null) {
       // user filter
       qryString +=
-        'minAge=' + userParams.minAge +
-        '&maxAge=' + userParams.maxAge +
-        '&gender=' + userParams.gender +
-        '&orderBy=' + userParams.orderBy;
+        'minAge=' +
+        userParams.minAge +
+        '&maxAge=' +
+        userParams.maxAge +
+        '&gender=' +
+        userParams.gender +
+        '&orderBy=' +
+        userParams.orderBy;
     }
 
     // use angular2-jwt to request authentication
@@ -53,7 +65,9 @@ export class UserService {
 
         // check if theres anything in the header with Pagination as headers
         if (response.headers.get('Pagination') != null) {
-          paginatedResult.pagination = JSON.parse(response.headers.get('Pagination'));
+          paginatedResult.pagination = JSON.parse(
+            response.headers.get('Pagination')
+          );
         }
 
         return paginatedResult;
@@ -91,6 +105,83 @@ export class UserService {
     return this.authHttp
       .post(this.baseUrl + 'users/' + userId + '/like/' + recipientId, {})
       .catch(this.handleError);
+  }
+
+  getMessages(
+    userId: number,
+    page?: number,
+    itemsPerPage?: number,
+    messageContainer?: string
+  ) {
+    // create new instance of PaginatedResult to return
+    const paginatedResult: PaginatedResult<Message[]> = new PaginatedResult<
+      Message[]
+    >();
+
+    // build our query string
+    let qryString = '?messageContainer=' + messageContainer;
+
+    if (page != null && itemsPerPage != null) {
+      // pagination filter
+      qryString += '&pageSize=' + itemsPerPage + '&pageNumber=' + page;
+    }
+
+    // use angular2-jwt to request authentication
+    return this.authHttp
+      .get(this.baseUrl + 'users/' + userId + '/messages' + qryString)
+      .map((response: Response) => {
+        paginatedResult.result = response.json();
+
+        // check if theres anything in the header with Pagination as headers
+        if (response.headers.get('Pagination') != null) {
+          paginatedResult.pagination = JSON.parse(
+            response.headers.get('Pagination')
+          );
+        }
+
+        return paginatedResult;
+      })
+      .catch(this.handleError);
+  }
+
+  getMessageThread(userId: number, recipientId: number) {
+    return this.authHttp
+      .get(this.baseUrl + 'users/' + userId + '/messages/thread/' + recipientId)
+      .map((response: Response) => {
+        return response.json();
+      })
+      .catch(this.handleError);
+  }
+
+  sendMessage(userId: number, message: Message) {
+    return this.authHttp
+      .post(this.baseUrl + 'users/' + userId + '/messages', message)
+      .map(response => {
+        return response.json();
+      })
+      .catch(this.handleError);
+  }
+
+  deleteMessage(userId: number, id: number) {
+    return this.authHttp
+      // using post we need send an object in the body
+      .post(this.baseUrl + 'users/' + userId + '/messages/' + id, {})
+      // return no content we don't need to
+      // map anything
+      .map(response => {})
+      .catch(this.handleError);
+  }
+
+  markAsread(userId: number, id: number) {
+    return this.authHttp
+      // using post we need send an object in the body
+      .post(this.baseUrl + 'users/' + userId + '/messages/' + id + '/read', {})
+      // return no content we don't need to
+      // map anything
+      .map(() => {})
+      .catch(this.handleError)
+      // subscribe within the service itself
+      .subscribe();
   }
 
   // method to handle error
