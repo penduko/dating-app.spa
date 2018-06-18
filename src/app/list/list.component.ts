@@ -31,7 +31,7 @@ export class ListComponent implements OnInit {
     });
 
     // initialize default value
-    this.likesParam = 'likees';
+    this.likesParam = 'likers';
   }
 
   loadUsers() {

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from './_services/auth.service';
-import { JwtHelper } from 'angular2-jwt';
+import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Component({
   selector: 'app-root',
@@ -8,10 +8,9 @@ import { JwtHelper } from 'angular2-jwt';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-  title = 'app';
-  jwtHelper: JwtHelper = new JwtHelper();
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService,
+    private jwtHelperService: JwtHelperService) {}
 
   ngOnInit() {
     // get the token string from local storage
@@ -22,12 +21,12 @@ export class AppComponent implements OnInit {
     const user = JSON.parse(localStorage.getItem('user'));
 
     if (token) {
-      this.authService.decodedToken = this.jwtHelper.decodeToken(token);
+      this.authService.decodedToken = this.jwtHelperService.decodeToken(token);
     }
 
     if (user) {
       this.authService.currentUser = user;
-      // change the current photo url to keep updated 
+      // change the current photo url to keep updated
       this.authService.changeMemberPhoto(user.photoUrl);
     }
   }

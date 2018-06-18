@@ -1,24 +1,23 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { User } from '../_models/User';
 import { Observable } from 'rxjs/Observable';
-import { RequestOptions, Http, Headers, Response } from '@angular/http';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/throw';
-import { AuthHttp } from 'angular2-jwt';
 import { PaginatedResult, Pagination } from '../_models/pagination';
 import { Message } from '../_models/message';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class UserService {
   baseUrl = environment.apiUrl;
 
-  constructor(private authHttp: AuthHttp) {}
+  constructor(private authHttp: HttpClient) {}
 
   getUsers(
-    page?: number,
-    itemsPerPage?: number,
+    page?,
+    itemsPerPage?,
     userParams?: any,
     likesParam?: string
   ) {
@@ -27,41 +26,43 @@ export class UserService {
       User[]
     >();
 
-    // build our query string
-    let qryString = '?';
+    // initialize HttpParams to be
+    // used as parameter in the query
+    let params = new HttpParams();
+
     if (page != null && itemsPerPage != null) {
       // pagination filter
-      qryString += 'pageNumber=' + page + '&pageSize=' + itemsPerPage + '&';
+      params = params.append('pageNumber', page);
+      params = params.append('pageSize', itemsPerPage);
     }
 
     if (likesParam === 'likers') {
       // user likers filter
-      qryString += 'likers=true&';
+      params = params.append('likers', 'true');
     }
 
     if (likesParam === 'likees') {
       // user likees filter
-      qryString += 'likees=true&';
+      params = params.append('likees', 'true');
     }
 
     if (userParams != null) {
       // user filter
-      qryString +=
-        'minAge=' +
-        userParams.minAge +
-        '&maxAge=' +
-        userParams.maxAge +
-        '&gender=' +
-        userParams.gender +
-        '&orderBy=' +
-        userParams.orderBy;
+      params = params.append('minAge', userParams.minAge);
+      params = params.append('maxAge', userParams.maxAge);
+      params = params.append('gender', userParams.gender);
+      params = params.append('orderBy', userParams.orderBy);
     }
 
-    // use angular2-jwt to request authentication
+    // use auth0/angular-jwt to request authentication
     return this.authHttp
-      .get(this.baseUrl + 'users' + qryString)
-      .map((response: Response) => {
-        paginatedResult.result = response.json();
+      // observe: 'response' will return the full reponse back
+      // instead of the body
+      // supply User of array the type of what were returning
+      // instead of an object
+      .get<User[]>(this.baseUrl + 'users', { observe: 'response', params })
+      .map(response => {
+        paginatedResult.result = response.body;
 
         // check if theres anything in the header with Pagination as headers
         if (response.headers.get('Pagination') != null) {
@@ -71,46 +72,39 @@ export class UserService {
         }
 
         return paginatedResult;
-      })
-      .catch(this.handleError);
+      });
   }
 
   getUser(id): Observable<User> {
-    // use angular2-jwt to request authentication
+    // use auth0/angular-jwt to request authentication
     return this.authHttp
-      .get(this.baseUrl + 'users/' + id)
-      .map(response => <User>response.json())
-      .catch(this.handleError);
+      .get<User>(this.baseUrl + 'users/' + id);
   }
 
   updateUser(id: number, user: User) {
     return this.authHttp
-      .put(this.baseUrl + 'users/' + id, user)
-      .catch(this.handleError);
+      .put(this.baseUrl + 'users/' + id, user);
   }
 
   setMainPhoto(userId: number, id: number) {
     return this.authHttp
-      .post(this.baseUrl + 'users/' + userId + '/photos/' + id + '/setMain', {})
-      .catch(this.handleError);
+      .post(this.baseUrl + 'users/' + userId + '/photos/' + id + '/setMain', {});
   }
 
   deletePhoto(userId: number, id: number) {
     return this.authHttp
-      .delete(this.baseUrl + 'users/' + userId + '/photos/' + id)
-      .catch(this.handleError);
+      .delete(this.baseUrl + 'users/' + userId + '/photos/' + id);
   }
 
   sendLike(userId: number, recipientId: number) {
     return this.authHttp
-      .post(this.baseUrl + 'users/' + userId + '/like/' + recipientId, {})
-      .catch(this.handleError);
+      .post(this.baseUrl + 'users/' + userId + '/like/' + recipientId, {});
   }
 
   getMessages(
     userId: number,
-    page?: number,
-    itemsPerPage?: number,
+    page?,
+    itemsPerPage?,
     messageContainer?: string
   ) {
     // create new instance of PaginatedResult to return
@@ -118,19 +112,22 @@ export class UserService {
       Message[]
     >();
 
-    // build our query string
-    let qryString = '?messageContainer=' + messageContainer;
+    // initialize HttpParams to be
+    // used as parameter in the query
+    let params = new HttpParams();
+    params = params.append('messageContainer', messageContainer);
 
     if (page != null && itemsPerPage != null) {
       // pagination filter
-      qryString += '&pageSize=' + itemsPerPage + '&pageNumber=' + page;
+      params = params.append('pageSize', itemsPerPage);
+      params = params.append('pageNumber', page);
     }
 
-    // use angular2-jwt to request authentication
+    // use auth0/angular-jwt to request authentication
     return this.authHttp
-      .get(this.baseUrl + 'users/' + userId + '/messages' + qryString)
-      .map((response: Response) => {
-        paginatedResult.result = response.json();
+      .get<Message[]>(this.baseUrl + 'users/' + userId + '/messages', { observe: 'response', params })
+      .map(response => {
+        paginatedResult.result = response.body;
 
         // check if theres anything in the header with Pagination as headers
         if (response.headers.get('Pagination') != null) {
@@ -140,26 +137,17 @@ export class UserService {
         }
 
         return paginatedResult;
-      })
-      .catch(this.handleError);
+      });
   }
 
   getMessageThread(userId: number, recipientId: number) {
     return this.authHttp
-      .get(this.baseUrl + 'users/' + userId + '/messages/thread/' + recipientId)
-      .map((response: Response) => {
-        return response.json();
-      })
-      .catch(this.handleError);
+      .get<Message[]>(this.baseUrl + 'users/' + userId + '/messages/thread/' + recipientId);
   }
 
   sendMessage(userId: number, message: Message) {
     return this.authHttp
-      .post(this.baseUrl + 'users/' + userId + '/messages', message)
-      .map(response => {
-        return response.json();
-      })
-      .catch(this.handleError);
+      .post<Message>(this.baseUrl + 'users/' + userId + '/messages', message);
   }
 
   deleteMessage(userId: number, id: number) {
@@ -168,8 +156,7 @@ export class UserService {
       .post(this.baseUrl + 'users/' + userId + '/messages/' + id, {})
       // return no content we don't need to
       // map anything
-      .map(response => {})
-      .catch(this.handleError);
+      .map(response => {});
   }
 
   markAsread(userId: number, id: number) {
@@ -179,40 +166,8 @@ export class UserService {
       // return no content we don't need to
       // map anything
       .map(() => {})
-      .catch(this.handleError)
       // subscribe within the service itself
       .subscribe();
   }
 
-  // method to handle error
-  private handleError(error: any) {
-    // handle status 400 error from the server
-    if (error.status === 400) {
-      // errors the comes out of the server
-      // it is stored in _body of the reponse
-      return Observable.throw(error._body);
-    }
-
-    // get the application error from the header
-    const applicationError = error.headers.get('Application-Error');
-    if (applicationError) {
-      // return the message return from the server
-      return Observable.throw(applicationError);
-    }
-
-    // the model state error
-    const serverError = error.json();
-    let modelStateErrors = '';
-    if (serverError) {
-      // loop the keys from the server error
-      for (const key in serverError) {
-        if (serverError[key]) {
-          // add to medel state errors
-          modelStateErrors += serverError[key] + '\n';
-        }
-      }
-    }
-
-    return Observable.throw(modelStateErrors || 'Server error');
-  }
 }

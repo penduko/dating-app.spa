@@ -1,19 +1,19 @@
 import { Injectable } from '@angular/core';
-import { Http, Headers, RequestOptions, Response } from '@angular/http';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/throw';
-import { Observable } from 'rxjs/Observable';
-import { tokenNotExpired, JwtHelper } from 'angular2-jwt';
 import { User } from '../_models/User';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { JwtHelperService } from '@auth0/angular-jwt';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthUser } from '../_models/authUser';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class AuthService {
-  baseUrl = 'http://localhost:5000/api/auth/';
+  baseUrl = environment.apiUrl;
   userToken: any;
   decodedToken: any;
-  jwtHelper: JwtHelper = new JwtHelper();
   currentUser: User;
   // use behaviorsubject for any to any component communications
   // behaviorsubject needs an initial value
@@ -21,7 +21,10 @@ export class AuthService {
   private photoUrl = new BehaviorSubject<string>('../../assets/user.png');
   // property that other component can subscribe
   currentPhotoUrl = this.photoUrl.asObservable();
-  constructor(private http: Http) {}
+  constructor(
+    private http: HttpClient,
+    private jwtHelperService: JwtHelperService
+  ) {}
 
   changeMemberPhoto(photoUrl: string) {
     if (photoUrl == null) {
@@ -34,9 +37,10 @@ export class AuthService {
   login(model: any) {
     // post our model and store the return token in browser local storage
     return this.http
-      .post(this.baseUrl + 'login', model, this.requestOptions())
-      .map((response: Response) => {
-        const user = response.json();
+      .post<AuthUser>(this.baseUrl + 'auth/login', model, {
+        headers: new HttpHeaders().set('Content-type', 'application/json')
+      })
+      .map(user => {
 
         // check if there's anything in our user object
         if (user && user.tokenString) {
@@ -49,55 +53,34 @@ export class AuthService {
           this.userToken = user.tokenString;
 
           // decode and get the username from token to display the user
-          this.decodedToken = this.jwtHelper.decodeToken(user.tokenString);
+          this.decodedToken = this.jwtHelperService.decodeToken(
+            user.tokenString
+          );
 
           // set currentPhotoUrl to photoUrl contained in current user object
           this.changeMemberPhoto(this.currentUser.photoUrl);
         }
-      })
-      .catch(this.handleError);
+      });
   }
 
   register(user: User) {
     // post our model
     return this.http
-      .post(this.baseUrl + 'register', user, this.requestOptions())
-      .catch(this.handleError);
+      .post(this.baseUrl + 'auth/register', user, {
+        headers: new HttpHeaders().set('Content-type', 'application/json')
+      });
   }
 
   loggedIn() {
-    // use angular2-jwt library to check if token is valid
-    return tokenNotExpired();
-  }
+    // grabs the token in our local storage
+    const token = this.jwtHelperService.tokenGetter();
 
-  requestOptions() {
-    // specify the type of request
-    const headers = new Headers({ 'Content-type': 'application/json' });
-    return new RequestOptions({ headers: headers });
-  }
-
-  // method to handle error
-  private handleError(error: any) {
-    // get the application error from the header
-    const applicationError = error.headers.get('Application-Error');
-    if (applicationError) {
-      // return the message return from the server
-      return Observable.throw(applicationError);
+    // return false if theres no token
+    if (!token) {
+      return false;
     }
 
-    // the model state error
-    const serverError = error.json();
-    let modelStateErrors = '';
-    if (serverError) {
-      // loop the keys from the server error
-      for (const key in serverError) {
-        if (serverError[key]) {
-          // add to medel state errors
-          modelStateErrors += serverError[key] + '\n';
-        }
-      }
-    }
-
-    return Observable.throw(modelStateErrors || 'Server error');
+    return !this.jwtHelperService.isTokenExpired(token);
   }
+
 }

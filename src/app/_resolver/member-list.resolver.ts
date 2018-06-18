@@ -34,8 +34,10 @@ export class MemberListResolver implements Resolve<User[]> {
       // incase of an error
       // notify the user
       this.alertify.error('Problem retrieving data');
+
       // redirect the user
       this.router.navigate(['/home']);
+
       // return null
       return Observable.of(null);
     });

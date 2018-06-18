@@ -11,6 +11,8 @@ import {
 } from 'ngx-bootstrap';
 import { NgxGalleryModule } from 'ngx-gallery';
 import { FileUploadModule } from 'ng2-file-upload';
+import { JwtModule } from '@auth0/angular-jwt';
+import { HttpClientModule } from '@angular/common/http';
 
 import { AppComponent } from './app.component';
 import { NavComponent } from './nav/nav.component';
@@ -26,7 +28,6 @@ import { appRoutes } from './routes';
 import { AuthGuard } from './_guards/auth.guard';
 import { UserService } from './_services/user.service';
 import { MemberCardComponent } from './member/member-card/member-card.component';
-import { AuthModule } from './auth/auth.module';
 import { MemberDetailComponent } from './member/member-detail/member-detail.component';
 import { MemberDetailResolver } from './_resolver/member-detail.resolver';
 import { MemberListResolver } from './_resolver/member-list.resolver';
@@ -38,6 +39,16 @@ import { TimeAgoPipe } from 'time-ago-pipe';
 import { ListsResolver } from './_resolver/lists.resolver';
 import { MessageResolver } from './_resolver/message.resolver';
 import { MemberMessagesComponent } from './member/member-messages/member-messages.component';
+import { ErrorInterceptorProvider } from './_services/error.interceptor';
+
+export function getAccessToken(): string {
+  return localStorage.getItem('token');
+}
+
+export const jwtConfig = {
+  tokenGetter: getAccessToken,
+  whitelistedDomains: ['localhost:5000']
+};
 
 @NgModule({
   declarations: [
@@ -62,13 +73,16 @@ import { MemberMessagesComponent } from './member/member-messages/member-message
     ReactiveFormsModule,
     BsDropdownModule.forRoot(),
     RouterModule.forRoot(appRoutes),
-    AuthModule,
     TabsModule.forRoot(),
     NgxGalleryModule,
     FileUploadModule,
     BsDatepickerModule.forRoot(),
     PaginationModule.forRoot(),
-    ButtonsModule.forRoot()
+    ButtonsModule.forRoot(),
+    HttpClientModule,
+    JwtModule.forRoot({
+      config: jwtConfig
+    })
   ],
   providers: [
     // components use services, which provide specific
@@ -84,7 +98,8 @@ import { MemberMessagesComponent } from './member/member-messages/member-message
     MemberEditResolver,
     PreventUnsaveChanges,
     ListsResolver,
-    MessageResolver
+    MessageResolver,
+    ErrorInterceptorProvider
   ],
   bootstrap: [AppComponent]
 })
