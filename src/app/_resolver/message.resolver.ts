@@ -3,9 +3,8 @@ import { User } from '../_models/User';
 import { Injectable } from '@angular/core';
 import { UserService } from '../_services/user.service';
 import { AlertifyService } from '../_services/alertify.service';
-import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/observable/of';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from '../_services/auth.service';
 import { Message } from '../_models/message';
 
@@ -41,14 +40,18 @@ export class MessageResolver implements Resolve<Message[]> {
         this.pageSize,
         this.messageContainer
       )
-      .catch(error => {
-        // incase of an error
-        // notify the user
-        this.alertify.error('Problem retrieving data');
-        // redirect the user
-        this.router.navigate(['/home']);
-        // return null
-        return Observable.of(null);
-      });
+      .pipe(
+          catchError(error => {
+          // incase of an error
+          // notify the user
+          this.alertify.error('Problem retrieving data');
+
+          // redirect the user
+          this.router.navigate(['/home']);
+
+          // return null
+          return of(null);
+        })
+      );
   }
 }

@@ -3,9 +3,8 @@ import { User } from '../_models/User';
 import { Injectable } from '@angular/core';
 import { UserService } from '../_services/user.service';
 import { AlertifyService } from '../_services/alertify.service';
-import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/catch';
-import 'rxjs/add/observable/of';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from '../_services/auth.service';
 
 // because this is not a component
@@ -29,14 +28,17 @@ export class MemberEditResolver implements Resolve<User> {
     // in the case of component we need to subscribe
     // because were returning Obeservable but the route resolver automatically
     // subscribe for us so we dont need to use it here
-    return this.userService.getUser(this.authService.decodedToken.nameid).catch(error => {
-      // incase of an error
-      // notify the user
-      this.alertify.error('Problem retrieving data');
-      // redirect the user
-      this.router.navigate(['/home']);
-      // return null
-      return Observable.of(null);
-    });
+    return this.userService.getUser(this.authService.decodedToken.nameid)
+    .pipe(
+        catchError(error => {
+        // incase of an error
+        // notify the user
+        this.alertify.error('Problem retrieving data');
+        // redirect the user
+        this.router.navigate(['/home']);
+        // return null
+        return of(null);
+      })
+    );
   }
 }

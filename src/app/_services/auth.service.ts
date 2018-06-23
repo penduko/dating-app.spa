@@ -3,7 +3,8 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/observable/throw';
 import { User } from '../_models/User';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthUser } from '../_models/authUser';
@@ -40,35 +41,35 @@ export class AuthService {
       .post<AuthUser>(this.baseUrl + 'auth/login', model, {
         headers: new HttpHeaders().set('Content-type', 'application/json')
       })
-      .map(user => {
+      .pipe(
+        map(user => {
+          // check if there's anything in our user object
+          if (user && user.tokenString) {
+            // store the token in localstorage
+            localStorage.setItem('token', user.tokenString);
+            // store the user in localstorage
+            localStorage.setItem('user', JSON.stringify(user.user));
 
-        // check if there's anything in our user object
-        if (user && user.tokenString) {
-          // store the token in localstorage
-          localStorage.setItem('token', user.tokenString);
-          // store the user in localstorage
-          localStorage.setItem('user', JSON.stringify(user.user));
+            this.currentUser = user.user;
+            this.userToken = user.tokenString;
 
-          this.currentUser = user.user;
-          this.userToken = user.tokenString;
+            // decode and get the username from token to display the user
+            this.decodedToken = this.jwtHelperService.decodeToken(
+              user.tokenString
+            );
 
-          // decode and get the username from token to display the user
-          this.decodedToken = this.jwtHelperService.decodeToken(
-            user.tokenString
-          );
-
-          // set currentPhotoUrl to photoUrl contained in current user object
-          this.changeMemberPhoto(this.currentUser.photoUrl);
-        }
-      });
+            // set currentPhotoUrl to photoUrl contained in current user object
+            this.changeMemberPhoto(this.currentUser.photoUrl);
+          }
+        })
+      );
   }
 
   register(user: User) {
     // post our model
-    return this.http
-      .post(this.baseUrl + 'auth/register', user, {
-        headers: new HttpHeaders().set('Content-type', 'application/json')
-      });
+    return this.http.post(this.baseUrl + 'auth/register', user, {
+      headers: new HttpHeaders().set('Content-type', 'application/json')
+    });
   }
 
   loggedIn() {
@@ -82,5 +83,4 @@ export class AuthService {
 
     return !this.jwtHelperService.isTokenExpired(token);
   }
-
 }

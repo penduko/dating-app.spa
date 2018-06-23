@@ -3,8 +3,8 @@ import { Message } from '../../_models/message';
 import { AuthService } from '../../_services/auth.service';
 import { UserService } from '../../_services/user.service';
 import { AlertifyService } from '../../_services/alertify.service';
+import { tap } from 'rxjs/operators';
 import * as _ from 'underscore';
-import 'rxjs/add/operator/do';
 
 @Component({
   selector: 'app-member-messages',
@@ -32,16 +32,20 @@ export class MemberMessagesComponent implements OnInit {
     this.userService
       .getMessageThread(this.authSerivice.decodedToken.nameid, this.userId)
       // do something with obeservable array that being returned
-      .do(messages => {
-        // iterates messages
-        _.each(messages, (message: Message) => {
-          // mark unread messages as read
-          if (message.isRead === false && message.recipientId === currentUserId) {
-            this.userService.markAsread(currentUserId, message.id);
-          }
-
-        });
-      })
+      .pipe(
+        tap(messages => {
+          // iterates messages
+          _.each(messages, (message: Message) => {
+            // mark unread messages as read
+            if (
+              message.isRead === false &&
+              message.recipientId === currentUserId
+            ) {
+              this.userService.markAsread(currentUserId, message.id);
+            }
+          });
+        })
+      )
       .subscribe(
         messages => {
           this.messages = messages;
@@ -57,18 +61,21 @@ export class MemberMessagesComponent implements OnInit {
 
     this.userService
       .sendMessage(this.authSerivice.decodedToken.nameid, this.newMessage)
-      .subscribe(message => {
-        // insert the new message at
-        // the start of our messages array
-        this.messages.unshift(message);
+      .subscribe(
+        message => {
+          // insert the new message at
+          // the start of our messages array
+          this.messages.unshift(message);
 
-        //// uncomment to run debugger
-        // debugger;
+          //// uncomment to run debugger
+          // debugger;
 
-        // reset the message form
-        this.newMessage.content = '';
-      }, error => {
-        this.alertify.error(error);
-      });
+          // reset the message form
+          this.newMessage.content = '';
+        },
+        error => {
+          this.alertify.error(error);
+        }
+      );
   }
 }
